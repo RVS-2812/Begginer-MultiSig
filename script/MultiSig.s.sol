@@ -9,6 +9,18 @@ contract MultiSigScript is Script {
     MultiSig public multiSig;
 
     function setUp() public {}
+    function deploy(address addr) public returns(MultiSig) {
+        
+                HelperConfig helperConfig = new HelperConfig();
+        HelperConfig.NetworkConfig memory networkConfig = helperConfig.getActiveNetworkConfig();
+        vm.startBroadcast(addr);
+
+        multiSig = new MultiSig(networkConfig.priceFeed);
+
+        vm.stopBroadcast();
+        return multiSig;
+        
+    }
 
     function run() public returns (MultiSig) {
         HelperConfig helperConfig = new HelperConfig();

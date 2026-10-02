@@ -13,8 +13,10 @@ contract MultiSigTest is Test, CodeConstants {
     MultiSig public multiSig;
 
     function setUp() public {
-        multiSig = new MultiSigScript().run();
+        
+        multiSig = new MultiSigScript().deploy(address(this));
         vm.deal(payable(address(multiSig)), 10 ether);
+        // vm.stopPrank();
     }
 
     function testInitialOwner() view public {

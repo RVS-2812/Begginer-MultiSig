@@ -71,7 +71,7 @@ contract MultiSig {
             revert InvalidRecipientAddress();
         }
         if (s_owners.length == 1) {
-            s_isOwner[to] = true;
+            // s_isOwner[to] = true;
             if (value > address(this).balance) {
                 revert insufficientFunds();
             }
@@ -112,6 +112,7 @@ contract MultiSig {
         if (s_proposedOwners[newOwner].length == s_owners.length - 1) {
             // Add the new owner
             s_owners.push(newOwner);
+            s_isOwner[newOwner] = true;
             // Remove the proposed owner from the list
             delete s_proposedOwners[newOwner];
             emit AddedOwner(newOwner);
@@ -184,6 +185,12 @@ contract MultiSig {
 
     function hasOwner(address owner) private view returns (bool) {
         return s_isOwner[owner];
+        // for (uint256 i = 0; i < s_owners.length; i++) {
+        //     if (s_owners[i] == owner) {
+        //         return true;
+        //     }
+        // }
+        // return false;
     }
 
     function AlreadyProposed(address owner) private view returns (bool) {
