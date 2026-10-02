@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script} from "lib/forge-std/src/Script.sol";
 import {MultiSig} from "../src/MultiSig.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract MultiSigScript is Script {
     MultiSig public multiSig;
@@ -10,9 +11,11 @@ contract MultiSigScript is Script {
     function setUp() public {}
 
     function run() public returns (MultiSig) {
+        HelperConfig helperConfig = new HelperConfig();
+        HelperConfig.NetworkConfig memory networkConfig = helperConfig.getActiveNetworkConfig();
         vm.startBroadcast();
 
-        multiSig = new MultiSig();
+        multiSig = new MultiSig(networkConfig.priceFeed);
 
         vm.stopBroadcast();
         return multiSig;

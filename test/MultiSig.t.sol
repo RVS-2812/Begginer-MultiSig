@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test, console} from "lib/forge-std/src/Test.sol";
 import {MultiSig} from "../src/MultiSig.sol";
+import {MultiSigScript} from "../script/MultiSig.s.sol";
 // import {console2} from "lib/foundry-devops/lib/forge-std/src/console2.sol";
 abstract contract CodeConstants {
     uint256 public constant INITIAL_BALANCE = 100 ether;
@@ -12,7 +13,7 @@ contract MultiSigTest is Test, CodeConstants {
     MultiSig public multiSig;
 
     function setUp() public {
-        multiSig = new MultiSig();
+        multiSig = new MultiSigScript().run();
         vm.deal(payable(address(multiSig)), 10 ether);
     }
 
@@ -109,7 +110,7 @@ contract MultiSigTest is Test, CodeConstants {
         address recipient = address(0x456);
         uint256 amount = 1 ether;
         multiSig.proposeTransaction(recipient, amount);
-        MultiSig.Proposal[] memory proposals = multiSig.getProposaedTransactions();
+        MultiSig.Proposal[] memory proposals = multiSig.getProposedTransactions();
         assertEq(proposals.length, 0); // since only 1 owner, the transaction should be executed immediately and not stored as a proposal
     }
 
@@ -123,14 +124,14 @@ contract MultiSigTest is Test, CodeConstants {
         address recipient = address(0x789);
         uint256 amount = 1 ether;
         multiSig.proposeTransaction(recipient, amount);
-        MultiSig.Proposal[] memory proposals = multiSig.getProposaedTransactions();
+        MultiSig.Proposal[] memory proposals = multiSig.getProposedTransactions();
         assertEq(proposals.length, 1); // since there are multiple owners, the transaction should be stored as a proposal
         assertEq(proposals[proposals.length - 1].to, recipient);
         assertEq(proposals[proposals.length - 1].value, amount);
 
         vm.prank(newOwner);
         multiSig.SignProposedTransaction(0);
-        proposals = multiSig.getProposaedTransactions();
+        proposals = multiSig.getProposedTransactions();
         assertEq(proposals.length, 0); // since the transaction has been executed, the
 
     }
@@ -145,7 +146,7 @@ contract MultiSigTest is Test, CodeConstants {
         address recipient = address(0x789);
         uint256 amount = 11 ether;
         multiSig.proposeTransaction(recipient, amount);
-        MultiSig.Proposal[] memory proposals = multiSig.getProposaedTransactions();
+        MultiSig.Proposal[] memory proposals = multiSig.getProposedTransactions();
         assertEq(proposals.length, 1); // since there are multiple owners, the transaction should be stored as a proposal
         assertEq(proposals[proposals.length - 1].to, recipient);
         assertEq(proposals[proposals.length - 1].value, amount);
@@ -154,13 +155,13 @@ contract MultiSigTest is Test, CodeConstants {
         vm.expectRevert(MultiSig.insufficientFunds.selector);
 
         multiSig.SignProposedTransaction(0);
-        proposals = multiSig.getProposaedTransactions();
+        proposals = multiSig.getProposedTransactions();
         // assertEq(proposals.length, 0); // since the transaction has been executed, the
 
     }
 
-
-
-
+    function testPrice() public {
+        console.log(multiSig.getLatestPrice());
+    }
 
 }
