@@ -33,15 +33,25 @@ contract MultiSig{
     }
 
     address[] private s_owners;
+    mapping(address => bool) private s_isOwner;
     Proposal[]  private s_proposals;
     // Proposal[] private s_proposedOwners;
     mapping(address=> address[]) private s_proposedOwners;
     constructor() {
         s_owners.push(msg.sender);
+        s_isOwner[msg.sender] = true;
     }
 
-    function deposit() public payable onlyOwner {
+    function deposit() public payable{
         // Accepts ether deposits to the contract
+        emit Deposited(msg.sender, msg.value);
+    }
+
+    receive() payable external{
+        emit Deposited(msg.sender, msg.value);
+    }
+
+    fallback() payable external{
         emit Deposited(msg.sender, msg.value);
     }
 
@@ -51,7 +61,7 @@ contract MultiSig{
             revert InvalidRecipientAddress();
         }
         if(s_owners.length == 1) {
-
+            s_isOwner[to] = true;
             if(value > address(this).balance) {
                 revert insufficientFunds();
             }
@@ -79,6 +89,7 @@ contract MultiSig{
 
         if(s_owners.length == 1) {
             s_owners.push(newOwner);
+            s_isOwner[newOwner] = true;
             emit AddedOwner(newOwner);
             return;
         }
@@ -130,12 +141,14 @@ contract MultiSig{
                 revert insufficientFunds();
             }
 
-            (bool success, ) = payable(proposal.to).call{value: proposal.value}("");
-            require(success, "Transaction failed");
-
             // Remove the proposal from the list
             s_proposals[index] = s_proposals[s_proposals.length - 1];
             s_proposals.pop();
+
+            (bool success, ) = payable(proposal.to).call{value: proposal.value}("");
+            require(success, "Transaction failed");
+            // remove first to prevent re-entrancy attacks
+
             emit TransactionExecuted(proposal.to, proposal.value);
             return;
         }else{
@@ -168,13 +181,7 @@ contract MultiSig{
     // HELPERS
 
     function hasOwner(address owner) private view returns (bool) {
-        address[] memory m_owners = s_owners;
-        for (uint256 i = 0; i < m_owners.length; i++) {
-            if (m_owners[i] == owner) {
-                return true;
-            }
-        }
-        return false;
+        return s_isOwner[owner];
     }
 
     function AlreadyProposed(address owner) private view returns (bool) {
@@ -202,7 +209,7 @@ contract MultiSig{
 
     // GETTERS
 
-    function getProposaedTransactions() public view returns (Proposal[] memory) {
+    function getProposedTransactions() public view returns (Proposal[] memory) {
         return s_proposals;
     }
 
